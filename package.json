@@ -17,12 +17,22 @@
     "type": "git",
     "url": "git+https://github.com/samsoft00/node-typescript-api-starter.git"
   },
-  "keywords": [],
+  "keywords": [
+    "node",
+    "event",
+    "azure",
+    "serviceBus",
+    "AzureServiceBus",
+    "event-manager",
+    "event emitter",
+    "amqp",
+    "RabbitMQ"
+  ],
   "author": {
     "email": "oyewoleabayomi@gmail.com",
     "name": "Oyewole Abayomi"
   },
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/samsoft00/node-typescript-api-starter/issues"
   },
