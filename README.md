@@ -1,5 +1,7 @@
 # NodeJs Event Manager
 
+### Event Manager for both internal and external events e.g Azure Service Bus, RabbitMQ, etc.
+
 ## Basic Example
 
 - **Initialize**
