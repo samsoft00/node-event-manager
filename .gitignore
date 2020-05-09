@@ -43,5 +43,4 @@ node_modules
 
 #Local environment
 .env
-build/
 .vscode
