@@ -3,3 +3,8 @@ export interface EventConfig {
   subscription: string[];
   connectionString: string;
 }
+
+export interface EmitterInterface {
+  emit: Function;
+  addListener: Function;
+}

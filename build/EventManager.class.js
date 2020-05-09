@@ -1,15 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -51,10 +40,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 /* eslint-disable array-callback-return */
-var service_bus_1 = require("@azure/service-bus");
 var lodash_1 = require("lodash");
 var event_1 = __importDefault(require("./lib/event"));
-var EventResponse_1 = __importDefault(require("./lib/EventResponse"));
+var AzureServiceBus_1 = __importDefault(require("./AzureServiceBus"));
 var EventManager = /** @class */ (function () {
     function EventManager() {
     }
@@ -66,87 +54,29 @@ var EventManager = /** @class */ (function () {
     };
     EventManager.prototype.initialize = function (config) {
         var _this = this;
-        var name = config.name, subscription = config.subscription, connectionString = config.connectionString;
-        this.topicName = name;
-        this.connectionString = connectionString;
-        this.subscription = subscription;
-        var topicClient;
-        this.serviceClient = service_bus_1.ServiceBusClient.createFromConnectionString(connectionString);
-        subscription.map(function (subscriptionName, index) {
-            if (!_this.serviceClient || !_this.topicName) {
-                throw new Error('Error here');
-            }
-            topicClient = _this.serviceClient.createSubscriptionClient(_this.topicName, subscriptionName);
-            var receiver = topicClient.createReceiver(service_bus_1.ReceiveMode.peekLock);
-            var processMessage = function (brokeredMessage) { return __awaiter(_this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    event_1.default.emit({
-                        type: lodash_1.camelCase(subscriptionName),
-                        result: new EventResponse_1.default({ response: brokeredMessage, error: undefined })
-                    });
-                    return [2 /*return*/];
-                });
-            }); };
-            var processError = function (error) {
-                event_1.default.emit({
-                    type: lodash_1.camelCase(subscriptionName),
-                    result: new EventResponse_1.default({ response: undefined, error: error })
-                });
-            };
-            receiver.registerMessageHandler(processMessage, processError, {
-                autoComplete: false
-            });
+        this.serviceBus = new AzureServiceBus_1.default(config, event_1.default);
+        config.subscription.map(function (subscriptionName, index) {
+            var _a, _b;
+            (_a = _this.serviceBus) === null || _a === void 0 ? void 0 : _a.receiver(subscriptionName);
+            (_b = _this.serviceBus) === null || _b === void 0 ? void 0 : _b.processRetryDLQ(subscriptionName);
         });
-        topicClient.close().catch(function (err) { return console.log(err); });
-        // return (req, res, next) => next();
+        return function (req, res, next) { return next(); };
     };
     EventManager.on = function (eventName, listener) {
         event_1.default.addListener(lodash_1.camelCase(eventName), listener);
     };
     EventManager.prototype.emit = function (eventNames, payload) {
-        if (!this.serviceClient || !this.topicName) {
-            throw new Error('Emit error');
-        }
-        var topicClient = this.serviceClient.createTopicClient(this.topicName);
-        var sender = topicClient.createSender();
-        var listOfEvents = Array.isArray(eventNames) ? eventNames : [eventNames];
-        var azureExternalRequest = [];
-        var sendEventToListener = function (eventName) {
-            if (payload.source === 'azure') {
-                azureExternalRequest.push(eventName);
-            }
-            else {
-                Object.assign(payload, { label: eventName });
-                event_1.default.emit({
-                    type: lodash_1.camelCase(eventName),
-                    result: new EventResponse_1.default({ response: payload, error: undefined })
-                });
-            }
-        };
-        listOfEvents.map(function (eventName) { return sendEventToListener(eventName); });
-        if (azureExternalRequest.length > 0) {
-            azureExternalRequest.map(function (eventName, index) {
-                Object.assign(payload, {
-                    body: __assign(__assign({}, payload.body), { source: payload.source }),
-                    label: eventName
-                });
-                sender.send(payload).then(function () {
-                    console.log('Event Emitted');
-                });
-            });
-        }
-        topicClient
-            .close()
-            .then(function () { return sender.close(); })
-            .catch(function (err) { return console.log(err); });
+        if (!this.serviceBus)
+            throw new Error('Event manager config error');
+        this.serviceBus.sender(eventNames, payload);
     };
     EventManager.prototype.close = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (!this.serviceClient) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.serviceClient.close()];
+                        if (!this.serviceBus) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.serviceBus.close()];
                     case 1:
                         _a.sent();
                         _a.label = 2;
