@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 import EventManager from './EventManager.class';
 import EventResponse from './lib/EventResponse';
 

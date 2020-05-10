@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable array-callback-return */
 import { camelCase } from 'lodash';
 
@@ -8,13 +9,14 @@ import AzureServiceBus from './azure/AzureServiceBus';
 export default class EventManager {
   private static instance: EventManager;
 
-  serviceBus: AzureServiceBus | undefined;
+  private serviceBus: AzureServiceBus | undefined;
 
-  public static getInstance(): EventManager {
+  private constructor() {}
+
+  static getInstance(): EventManager {
     if (!EventManager.instance) {
       EventManager.instance = new EventManager();
     }
-
     return EventManager.instance;
   }
 
@@ -26,8 +28,6 @@ export default class EventManager {
 
       this.serviceBus?.processRetryDLQ(subscriptionName);
     });
-
-    return (req, res, next) => next();
   }
 
   public static on(eventName, listener) {
