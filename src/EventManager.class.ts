@@ -11,7 +11,7 @@ export default class EventManager {
 
   private _emittery!: EventEmitter;
 
-  private serviceBus!: AzureServiceBus;
+  private _serviceBus!: AzureServiceBus;
 
   private constructor() {}
 
@@ -26,12 +26,12 @@ export default class EventManager {
   }
 
   public initialize(config: IEventConfig) {
-    this.serviceBus = new AzureServiceBus(config, this._emittery);
+    this._serviceBus = new AzureServiceBus(config, this._emittery);
 
     config.subscription.map((subscriptionName, index) => {
-      this.serviceBus?.receiver(subscriptionName);
+      this._serviceBus?.receiver(subscriptionName);
 
-      this.serviceBus?.processRetryDLQ(subscriptionName);
+      this._serviceBus?.processRetryDLQ(subscriptionName);
     });
   }
 
@@ -40,14 +40,14 @@ export default class EventManager {
   }
 
   public emit(eventNames: string | string[], payload: any) {
-    if (!this.serviceBus) throw new Error('Event manager config error');
+    if (!this._serviceBus) throw new Error('Event manager config error');
 
-    this.serviceBus.sender(eventNames, payload);
+    this._serviceBus.sender(eventNames, payload);
   }
 
   async close() {
-    if (this.serviceBus) {
-      await this.serviceBus.close();
+    if (this._serviceBus) {
+      await this._serviceBus.close();
     }
   }
 }
