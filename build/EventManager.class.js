@@ -43,7 +43,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /* eslint-disable array-callback-return */
 var lodash_1 = require("lodash");
 var event_1 = __importDefault(require("./lib/event"));
-var AzureServiceBus_1 = __importDefault(require("./azure/AzureServiceBus"));
+var AzureServiceBus_1 = __importDefault(require("./services/AzureServiceBus"));
 var EventManager = /** @class */ (function () {
     function EventManager() {
     }

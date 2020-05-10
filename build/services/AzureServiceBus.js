@@ -128,7 +128,7 @@ var AzureServiceBus = /** @class */ (function () {
                             return [4 /*yield*/, sender.send(payload)];
                         case 1:
                             _a.sent();
-                            fancy_log_1.default(eventName + " event emitted!");
+                            fancy_log_1.default(lodash_1.camelCase(eventName) + " event emitted!");
                             return [2 /*return*/];
                     }
                 });
@@ -151,6 +151,7 @@ var AzureServiceBus = /** @class */ (function () {
                     case 0:
                         body = brokeredMessage.body, label = brokeredMessage.label;
                         this.sender(subscribeName, { body: body, label: label, source: 'azure' });
+                        fancy_log_1.default("Retry DLQ for " + subscribeName);
                         return [4 /*yield*/, brokeredMessage.complete()];
                     case 1:
                         _a.sent();
