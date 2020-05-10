@@ -1,21 +1,21 @@
 import { ServiceBusClient } from '@azure/service-bus';
-import { EmitterInterface, EventConfig } from './lib/interfaces';
+import { IEmitterInterface, IEventConfig } from '../lib/interfaces';
 /**
  * Azure Service bus
  */
 export default class AzureServiceBus {
     serviceClient: ServiceBusClient;
-    emittery: EmitterInterface;
+    emittery: IEmitterInterface;
     private topicName;
     connectionString: string;
     subscription: string[];
-    constructor(config: EventConfig, emittery: EmitterInterface);
+    constructor(config: IEventConfig, emittery: IEmitterInterface);
     /**
-     * Send message
+     * Receive message from both local and external
      */
     receiver(subscriptionName: string): void;
     /**
-     * Receive message
+     * Broadcast messages to local or external events
      */
     sender(eventNames: string | string[], payload: any): void;
     /**

@@ -54,7 +54,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var service_bus_1 = require("@azure/service-bus");
 var lodash_1 = require("lodash");
 var fancy_log_1 = __importDefault(require("fancy-log"));
-var EventResponse_1 = __importDefault(require("./lib/EventResponse"));
+var EventResponse_1 = __importDefault(require("../lib/EventResponse"));
 /**
  * Azure Service bus
  */
@@ -68,7 +68,7 @@ var AzureServiceBus = /** @class */ (function () {
         this.serviceClient = service_bus_1.ServiceBusClient.createFromConnectionString(connectionString);
     }
     /**
-     * Send message
+     * Receive message from both local and external
      */
     AzureServiceBus.prototype.receiver = function (subscriptionName) {
         var _this = this;
@@ -94,7 +94,7 @@ var AzureServiceBus = /** @class */ (function () {
         });
     };
     /**
-     * Receive message
+     * Broadcast messages to local or external events
      */
     AzureServiceBus.prototype.sender = function (eventNames, payload) {
         var _this = this;
