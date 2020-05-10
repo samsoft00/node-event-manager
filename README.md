@@ -21,7 +21,7 @@ const config = {
   connectionString: ''
 };
 
-myEventManager.initialize(config);
+app.use(myEventManager.initialize(config));
 ```
 
 - **Consumer**
