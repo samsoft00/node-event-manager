@@ -3,8 +3,8 @@ import { ServiceBusClient, ReceiveMode, ServiceBusMessage, TopicClient } from '@
 import { camelCase } from 'lodash';
 import log from 'fancy-log';
 
-import EventResponse from './lib/EventResponse';
-import { EmitterInterface, EventConfig } from './lib/interfaces';
+import EventResponse from '../lib/EventResponse';
+import { IEmitterInterface, IEventConfig } from '../lib/interfaces';
 
 /**
  * Azure Service bus
@@ -12,7 +12,7 @@ import { EmitterInterface, EventConfig } from './lib/interfaces';
 export default class AzureServiceBus {
   serviceClient: ServiceBusClient;
 
-  public emittery: EmitterInterface;
+  public emittery: IEmitterInterface;
 
   private topicName: string;
 
@@ -20,7 +20,7 @@ export default class AzureServiceBus {
 
   subscription: string[];
 
-  constructor(config: EventConfig, emittery: EmitterInterface) {
+  constructor(config: IEventConfig, emittery: IEmitterInterface) {
     const { connectionString, name, subscription } = config;
 
     this.connectionString = connectionString;
@@ -32,7 +32,7 @@ export default class AzureServiceBus {
   }
 
   /**
-   * Send message
+   * Receive message from both local and external
    */
   public receiver(subscriptionName: string) {
     const topicClient = this.serviceClient.createSubscriptionClient(
@@ -62,7 +62,7 @@ export default class AzureServiceBus {
   }
 
   /**
-   * Receive message
+   * Broadcast messages to local or external events
    */
   public sender(eventNames: string | string[], payload: any) {
     const topicClient = this.serviceClient.createTopicClient(this.topicName);

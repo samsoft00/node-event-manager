@@ -2,8 +2,8 @@
 import { camelCase } from 'lodash';
 
 import emittery from './lib/event';
-import { EventConfig } from './lib/interfaces';
-import AzureServiceBus from './AzureServiceBus';
+import { IEventConfig } from './lib/interfaces';
+import AzureServiceBus from './azure/AzureServiceBus';
 
 export default class EventManager {
   private static instance: EventManager;
@@ -18,7 +18,7 @@ export default class EventManager {
     return EventManager.instance;
   }
 
-  public initialize(config: EventConfig) {
+  public initialize(config: IEventConfig) {
     this.serviceBus = new AzureServiceBus(config, emittery);
 
     config.subscription.map((subscriptionName, index) => {
