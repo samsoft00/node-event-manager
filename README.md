@@ -12,7 +12,7 @@
 
 import EventManager from 'nodejs-event-manager';
 
-const myEventManager = new EventManager();
+const myEventManager = EventManager.getInstance();
 
 // Add Azure service bus credentials
 const config = {
@@ -21,7 +21,7 @@ const config = {
   connectionString: ''
 };
 
-app.use(myEventManager.initialize(config));
+myEventManager.initialize(config);
 ```
 
 - **Consumer**
@@ -29,12 +29,14 @@ app.use(myEventManager.initialize(config));
 ```js
 // Note: You must listen before emitting any events
 
-EventManager.on('samsoft-email-sub', async (payload: EventResponse) => {
+const listenEventMgr = EventManager.getInstance();
+
+listenEventMgr.on('samsoft-email-sub', async (payload: EventResponse) => {
   console.log({ label: payload.getSource(), body: payload.getBody() });
   await payload.complete();
 });
 
-EventManager.on('samsoft-blockchain-sub', async (payload: EventResponse) => {
+listenEventMgr.on('samsoft-blockchain-sub', async (payload: EventResponse) => {
   console.log({ label: payload.getSource(), body: payload.getBody() });
   await payload.complete();
 });
@@ -44,14 +46,14 @@ EventManager.on('samsoft-blockchain-sub', async (payload: EventResponse) => {
 
 ```js
 /* --------- File user.activity.service.js --------- */
-const eventManager =  EventManager.getInstance();
+const senderMgr =  EventManager.getInstance();
 
-eventManager.emit(['samsoft-blockchain-sub', 'samsoft-email-sub'], {
+senderMgr.emit(['samsoft-blockchain-sub', 'samsoft-email-sub'], {
   body: { name: 'samuel', profession: 'Software engineer' },
   source: 'azure'
 });
 
-eventManager.emit('samsoft-blockchain-sub', {
+senderMgr.emit('samsoft-blockchain-sub', {
   body: { name: 'samuel', profession: 'Software engineer' }
   source: 'node'
 });

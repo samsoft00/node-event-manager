@@ -4,7 +4,7 @@ import { camelCase } from 'lodash';
 
 import emittery from './lib/event';
 import { IEventConfig, IEmitterInterface } from './lib/interfaces';
-import AzureServiceBus from './azure/AzureServiceBus';
+import AzureServiceBus from './services/AzureServiceBus';
 
 export default class EventManager {
   private static instance: EventManager;

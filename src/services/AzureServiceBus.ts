@@ -97,7 +97,7 @@ export default class AzureServiceBus {
 
         await sender.send(payload);
 
-        log(`${eventName} event emitted!`);
+        log(`${camelCase(eventName)} event emitted!`);
       });
     }
     //
@@ -116,6 +116,8 @@ export default class AzureServiceBus {
       const { body, label } = brokeredMessage;
 
       this.sender(subscribeName, { body, label, source: 'azure' });
+      log(`Retry DLQ for ${subscribeName}`);
+
       await brokeredMessage.complete();
     };
 
