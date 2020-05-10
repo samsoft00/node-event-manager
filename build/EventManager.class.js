@@ -42,7 +42,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable array-callback-return */
 var lodash_1 = require("lodash");
-var eventemitter2_1 = require("eventemitter2");
+var event_1 = __importDefault(require("./lib/event"));
 var AzureServiceBus_1 = __importDefault(require("./azure/AzureServiceBus"));
 var EventManager = /** @class */ (function () {
     function EventManager() {
@@ -50,7 +50,7 @@ var EventManager = /** @class */ (function () {
     EventManager.getInstance = function () {
         if (!EventManager.instance) {
             EventManager.instance = new EventManager();
-            EventManager.instance._emittery = new eventemitter2_1.EventEmitter2();
+            EventManager.instance._emittery = event_1.default;
         }
         return EventManager.instance;
     };
