@@ -39,9 +39,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+/* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable array-callback-return */
 var lodash_1 = require("lodash");
-var event_1 = __importDefault(require("./lib/event"));
+var eventemitter2_1 = require("eventemitter2");
 var AzureServiceBus_1 = __importDefault(require("./azure/AzureServiceBus"));
 var EventManager = /** @class */ (function () {
     function EventManager() {
@@ -49,34 +50,34 @@ var EventManager = /** @class */ (function () {
     EventManager.getInstance = function () {
         if (!EventManager.instance) {
             EventManager.instance = new EventManager();
+            EventManager.instance._emittery = new eventemitter2_1.EventEmitter2();
         }
         return EventManager.instance;
     };
     EventManager.prototype.initialize = function (config) {
         var _this = this;
-        this.serviceBus = new AzureServiceBus_1.default(config, event_1.default);
+        this._serviceBus = new AzureServiceBus_1.default(config, this._emittery);
         config.subscription.map(function (subscriptionName, index) {
             var _a, _b;
-            (_a = _this.serviceBus) === null || _a === void 0 ? void 0 : _a.receiver(subscriptionName);
-            (_b = _this.serviceBus) === null || _b === void 0 ? void 0 : _b.processRetryDLQ(subscriptionName);
+            (_a = _this._serviceBus) === null || _a === void 0 ? void 0 : _a.receiver(subscriptionName);
+            (_b = _this._serviceBus) === null || _b === void 0 ? void 0 : _b.processRetryDLQ(subscriptionName);
         });
-        return function (req, res, next) { return next(); };
     };
-    EventManager.on = function (eventName, listener) {
-        event_1.default.addListener(lodash_1.camelCase(eventName), listener);
+    EventManager.prototype.on = function (eventName, listener) {
+        this._emittery.addListener(lodash_1.camelCase(eventName), listener);
     };
     EventManager.prototype.emit = function (eventNames, payload) {
-        if (!this.serviceBus)
+        if (!this._serviceBus)
             throw new Error('Event manager config error');
-        this.serviceBus.sender(eventNames, payload);
+        this._serviceBus.sender(eventNames, payload);
     };
     EventManager.prototype.close = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (!this.serviceBus) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.serviceBus.close()];
+                        if (!this._serviceBus) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this._serviceBus.close()];
                     case 1:
                         _a.sent();
                         _a.label = 2;
