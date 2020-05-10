@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable array-callback-return */
 import { camelCase } from 'lodash';
-import { EventEmitter2 as EventEmitter } from 'eventemitter2';
 
+import emittery from './lib/event';
 import { IEventConfig } from './lib/interfaces';
 import AzureServiceBus from './azure/AzureServiceBus';
+import { IEmitterInterface } from '../build/lib/interfaces';
 
 export default class EventManager {
   private static instance: EventManager;
 
-  private _emittery!: EventEmitter;
+  private _emittery!: IEmitterInterface;
 
   private _serviceBus!: AzureServiceBus;
 
@@ -19,7 +20,7 @@ export default class EventManager {
     if (!EventManager.instance) {
       EventManager.instance = new EventManager();
 
-      EventManager.instance._emittery = new EventEmitter();
+      EventManager.instance._emittery = emittery;
     }
 
     return EventManager.instance;
