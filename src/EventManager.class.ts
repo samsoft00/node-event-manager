@@ -5,6 +5,7 @@ import { camelCase } from 'lodash';
 import emittery from './lib/event';
 import { IEventConfig, IEmitterInterface } from './lib/interfaces';
 import AzureServiceBus from './services/AzureServiceBus';
+import QService from './services';
 
 export default class EventManager {
   private static instance: EventManager;
@@ -26,13 +27,8 @@ export default class EventManager {
   }
 
   public initialize(config: IEventConfig) {
-    this._serviceBus = new AzureServiceBus(config, this._emittery);
-
-    config.subscription.map((subscriptionName, index) => {
-      this._serviceBus?.receiver(subscriptionName);
-
-      this._serviceBus?.processRetryDLQ(subscriptionName);
-    });
+    this._serviceBus = QService(config.service || 'azure', config, this._emittery);
+    this._serviceBus.init();
   }
 
   public on(eventName, listener) {
@@ -42,7 +38,7 @@ export default class EventManager {
   public emit(eventNames: string | string[], payload: any) {
     if (!this._serviceBus) throw new Error('Event manager config error');
 
-    this._serviceBus.sender(eventNames, payload);
+    this._serviceBus.sender(eventNames, payload); // eventNames => sub:parent:child
   }
 
   async close() {

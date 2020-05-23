@@ -1,8 +1,7 @@
-// eslint-disable-next-line object-curly-newline
 import { ServiceBusClient, ReceiveMode, ServiceBusMessage, TopicClient } from '@azure/service-bus';
-import { camelCase } from 'lodash';
 import log from 'fancy-log';
 
+import { camelCase } from 'lodash';
 import EventResponse from '../lib/EventResponse';
 import { IEmitterInterface, IEventConfig } from '../lib/interfaces';
 
@@ -14,6 +13,8 @@ export default class AzureServiceBus {
 
   public emittery: IEmitterInterface;
 
+  public delimiter: string;
+
   private topicName: string;
 
   connectionString: string;
@@ -21,14 +22,26 @@ export default class AzureServiceBus {
   subscription: string[];
 
   constructor(config: IEventConfig, emittery: IEmitterInterface) {
-    const { connectionString, name, subscription } = config;
+    const { connectionString, name, delimiter, subscription } = config;
 
     this.connectionString = connectionString;
     this.subscription = subscription;
     this.topicName = name;
+    this.delimiter = delimiter || ':';
 
     this.emittery = emittery;
     this.serviceClient = ServiceBusClient.createFromConnectionString(connectionString);
+  }
+
+  /**
+   * Initialize services
+   */
+  public init() {
+    this.subscription.map((subscriptionName, index) => {
+      this.receiver(subscriptionName);
+
+      this.processRetryDLQ(subscriptionName);
+    });
   }
 
   /**
@@ -43,17 +56,21 @@ export default class AzureServiceBus {
     const receiver = topicClient.createReceiver(ReceiveMode.peekLock);
 
     const processMessage = async (brokeredMessage: ServiceBusMessage) => {
+      const { userProperties } = brokeredMessage;
+
+      const namespace =
+        userProperties && userProperties.data
+          ? [subscriptionName, userProperties.data].join(this.delimiter)
+          : subscriptionName;
+
       this.emittery.emit({
-        type: camelCase(subscriptionName),
+        type: camelCase(namespace),
         result: new EventResponse({ response: brokeredMessage, error: undefined })
       });
     };
 
     const processError = (error: Error) => {
-      this.emittery.emit({
-        type: camelCase(subscriptionName),
-        result: new EventResponse({ response: undefined, error })
-      });
+      log('Error occurred: ', error);
     };
 
     receiver.registerMessageHandler(processMessage, processError, {
@@ -64,19 +81,24 @@ export default class AzureServiceBus {
   /**
    * Broadcast messages to local or external events
    */
-  public sender(eventNames: string | string[], payload: any) {
+  public async sender(eventNames: string | string[], payload: any) {
+    if (typeof payload !== 'object') throw new Error('Payload must be a typeOf object!');
+
     const topicClient = this.serviceClient.createTopicClient(this.topicName);
 
     const sender = topicClient.createSender();
 
     const listOfEvents = Array.isArray(eventNames) ? eventNames : [eventNames];
-    const azureExternalRequest: string[] = [];
+    const externalRequest: string[] = [];
 
     const sendEventToListener = (eventName: string) => {
       if (payload.source === 'azure') {
-        azureExternalRequest.push(eventName);
+        externalRequest.push(eventName);
       } else {
-        Object.assign(payload, { label: eventName });
+        Object.assign(payload, {
+          body: { data: { ...payload.body }, source: payload.source || 'node' },
+          label: eventName
+        });
 
         this.emittery.emit({
           type: camelCase(eventName),
@@ -88,17 +110,28 @@ export default class AzureServiceBus {
     //
     listOfEvents.map((eventName: string) => sendEventToListener(eventName));
 
-    if (azureExternalRequest.length > 0) {
-      azureExternalRequest.map(async (eventName, index) => {
-        Object.assign(payload, {
-          body: { ...payload.body, source: payload.source },
-          label: eventName
+    if (externalRequest.length > 0) {
+      const request = externalRequest.map((eventName, index) => {
+        let userProperties;
+        let subcriptionName = eventName;
+
+        if (eventName.includes(this.delimiter)) {
+          const [sub, parent, child] = eventName.split(this.delimiter);
+          subcriptionName = sub;
+
+          userProperties = { data: child ? `${parent}:${child}` : parent };
+        }
+
+        return sender.send({
+          body: { data: { ...payload.body }, source: payload.source },
+          label: subcriptionName,
+          userProperties
         });
-
-        await sender.send(payload);
-
-        log(`${camelCase(eventName)} event emitted!`);
       });
+
+      Promise.all(request)
+        .then(() => log(`${this.constructor.name} event emitted!`))
+        .catch(error => log('Error sending event!', error));
     }
     //
   }
@@ -113,16 +146,21 @@ export default class AzureServiceBus {
     const receiver = queueClient.createReceiver(ReceiveMode.peekLock);
 
     const processMessage = async (brokeredMessage: ServiceBusMessage) => {
-      const { body, label } = brokeredMessage;
+      const { body, label, userProperties } = brokeredMessage;
 
-      this.sender(subscribeName, { body, label, source: 'azure' });
-      log(`Retry DLQ for ${subscribeName}`);
+      const namespace =
+        userProperties && userProperties.data
+          ? [subscribeName, userProperties.data].join(this.delimiter)
+          : subscribeName;
+
+      this.sender(namespace, { body: body.data, label, source: body.source });
+      log(`Retry DLQ for ${namespace}`);
 
       await brokeredMessage.complete();
     };
 
     const processError = (error: Error) => {
-      console.log(`RetryDLQ Error: ${error.message}`);
+      log(`RetryDLQ Error: ${error.message}`);
     };
 
     receiver.registerMessageHandler(processMessage, processError, {
