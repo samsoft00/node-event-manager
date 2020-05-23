@@ -36,7 +36,7 @@ listenEventMgr.on('samsoft-email-sub', async (payload: EventResponse) => {
   await payload.complete();
 });
 
-listenEventMgr.on('samsoft-blockchain-sub', async (payload: EventResponse) => {
+listenEventMgr.on('samsoft-email-sub:notification:send', async (payload: EventResponse) => {
   console.log({ label: payload.getSource(), body: payload.getBody() });
   await payload.complete();
 });
@@ -48,12 +48,14 @@ listenEventMgr.on('samsoft-blockchain-sub', async (payload: EventResponse) => {
 /* --------- File user.activity.service.js --------- */
 const senderMgr =  EventManager.getInstance();
 
+// For external event, use azure or rabbitMq
 senderMgr.emit(['samsoft-blockchain-sub', 'samsoft-email-sub'], {
   body: { name: 'samuel', profession: 'Software engineer' },
   source: 'azure'
 });
 
-senderMgr.emit('samsoft-blockchain-sub', {
+// For internal event handle, use node as source or leave blank
+senderMgr.emit('samsoft-blockchain-sub:notification:send', {
   body: { name: 'samuel', profession: 'Software engineer' }
   source: 'node'
 });
